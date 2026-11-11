@@ -1,10 +1,21 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import api from "./Api.jsx";
+
 import {
-  Link2, Zap, Share2, BarChart3, Globe2,
-  QrCode, Tags, FolderOpen, ShieldCheck,
-  Copy, Check, ArrowRight
+  Link2,
+  Zap,
+  Share2,
+  BarChart3,
+  Globe2,
+  QrCode,
+  Tags,
+  FolderOpen,
+  ShieldCheck,
+  Copy,
+  Check,
+  ArrowRight
 } from "lucide-react";
 
 const steps = [
@@ -35,32 +46,70 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [short, setShort] = useState("");
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function shorten(e) {
+  // Connect URL shortening with backend
+  async function shorten(e) {
     e.preventDefault();
 
-    try {
-      new URL(url);
+    setError("");
+    setShort("");
+    setCopied(false);
 
-      // Frontend demonstration only.
-      setShort(
-        "snip.ly/" + Math.random().toString(36).slice(2, 8)
-      );
+    const enteredUrl = url.trim();
+
+    // Validate URL
+    try {
+      const parsedUrl = new URL(enteredUrl);
+
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        setError("Please enter a valid HTTP or HTTPS URL.");
+        return;
+      }
     } catch {
-      alert("Please enter a valid URL including https://");
+      setError("Please enter a valid URL.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.post("/urls/shorten", {
+        originalUrl: enteredUrl
+      });
+
+      setShort(response.data.shortUrl);
+
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to shorten URL. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
+  // Copy generated short URL
   async function copyLink() {
-    await navigator.clipboard.writeText("https://" + short);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(short);
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1500);
+
+    } catch {
+      setError("Unable to copy the link. Please copy it manually.");
+    }
   }
 
   return (
     <main>
 
-      {/* HERO */}
+      {/* HERO SECTION */}
       <section className="hero container">
 
         <span className="eyebrow">
@@ -87,6 +136,7 @@ export default function Home() {
           </label>
 
           <div className="shortener-row">
+
             <Link2 />
 
             <input
@@ -94,13 +144,20 @@ export default function Home() {
               type="url"
               required
               value={url}
-              onChange={e => setUrl(e.target.value)}
+              onChange={(e) => setUrl(e.target.value)}
               placeholder="https://example.com/your-very-long-url"
             />
 
-            <button className="btn btn-primary" type="submit">
-              Shorten URL <ArrowRight size={16} />
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Shortening..." : "Shorten URL"}
+
+              {!loading && <ArrowRight size={16} />}
             </button>
+
           </div>
 
           <div className="form-hint">
@@ -108,11 +165,29 @@ export default function Home() {
             <span>8-character short link</span>
           </div>
 
+          {/* API ERROR */}
+          {error && (
+            <p className="api-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          {/* GENERATED SHORT URL */}
           {short && (
             <div className="short-result">
+
               <div>
                 <small>YOUR SHORT LINK</small>
-                <strong>{short}</strong>
+
+                <strong>
+                  <a
+                    href={short}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {short}
+                  </a>
+                </strong>
               </div>
 
               <button
@@ -120,9 +195,15 @@ export default function Home() {
                 className="btn btn-light"
                 onClick={copyLink}
               >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? (
+                  <Check size={16} />
+                ) : (
+                  <Copy size={16} />
+                )}
+
                 {copied ? "Copied" : "Copy"}
               </button>
+
             </div>
           )}
 
@@ -132,16 +213,18 @@ export default function Home() {
       {/* STATISTICS */}
       <section className="stats-band">
         <div className="container stats-grid">
+
           {[
             ["120K+", "Teams worldwide"],
             ["150+", "Countries covered"],
             ["4B+", "Clicks tracked"]
-          ].map(item => (
+          ].map((item) => (
             <div className="stat-card" key={item[0]}>
               <strong>{item[0]}</strong>
               <span>{item[1]}</span>
             </div>
           ))}
+
         </div>
       </section>
 
@@ -154,23 +237,30 @@ export default function Home() {
         />
 
         <div className="three-grid">
+
           {steps.map(([title, desc, Icon], index) => (
             <article className="step-card" key={title}>
+
               <div className="step-top">
-                <span className="icon-bubble"><Icon /></span>
+                <span className="icon-bubble">
+                  <Icon />
+                </span>
+
                 <span>0{index + 1}</span>
               </div>
 
               <h3>{title}</h3>
               <p>{desc}</p>
+
             </article>
           ))}
-        </div>
 
+        </div>
       </section>
 
       {/* FEATURES */}
       <section className="section section-muted">
+
         <div className="container">
 
           <SectionHeading
@@ -179,15 +269,21 @@ export default function Home() {
           />
 
           <div className="feature-grid">
+
             {features.map(([title, desc, Icon]) => (
               <article className="feature-card" key={title}>
-                <span className="icon-bubble"><Icon /></span>
+
+                <span className="icon-bubble">
+                  <Icon />
+                </span>
+
                 <h3>{title}</h3>
                 <p>{desc}</p>
+
               </article>
             ))}
-          </div>
 
+          </div>
         </div>
       </section>
 
@@ -212,16 +308,24 @@ export default function Home() {
         </div>
 
         <div className="analytics-card">
+
           <div className="analytics-head">
+
             <div>
               <small>TOTAL CLICKS</small>
               <h3>142,850</h3>
             </div>
+
             <span className="pill">+12.8% this week</span>
+
           </div>
 
           <div className="chart">
-            <svg viewBox="0 0 500 150" preserveAspectRatio="none">
+
+            <svg
+              viewBox="0 0 500 150"
+              preserveAspectRatio="none"
+            >
               <path
                 d="M0 125 C60 110 70 80 130 90 S210 40 270 65 S350 22 410 43 S465 25 500 10"
                 fill="none"
@@ -229,23 +333,29 @@ export default function Home() {
                 strokeWidth="4"
               />
             </svg>
+
           </div>
 
           {["United States", "India", "Germany"].map((country, i) => (
             <div className="country-row" key={country}>
+
               <span>{country}</span>
+
               <div>
                 <i style={{ width: [82, 64, 41][i] + "%" }} />
               </div>
+
               <b>{[82, 64, 41][i]}%</b>
+
             </div>
           ))}
-        </div>
 
+        </div>
       </section>
 
       {/* CTA */}
       <section className="cta container">
+
         <h2>Make every link count.</h2>
 
         <p>
@@ -254,6 +364,7 @@ export default function Home() {
         </p>
 
         <div className="cta-actions">
+
           <Link className="btn btn-white" to="/register">
             Get started free <ArrowRight size={17} />
           </Link>
@@ -261,6 +372,7 @@ export default function Home() {
           <Link className="btn btn-outline-light" to="/contact">
             Talk to sales
           </Link>
+
         </div>
       </section>
 

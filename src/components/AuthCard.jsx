@@ -7,20 +7,26 @@ export default function AuthCard({
   wide = false
 }) {
   return (
-    <main className={`auth-card ${wide ? "auth-card-wide" : ""}`}>
+    <div className="auth-page">
 
-      {eyebrow && (
-        <span className="eyebrow">{eyebrow}</span>
-      )}
+      <main
+        className={`auth-card ${wide ? "auth-card-wide" : ""}`}
+      >
 
-      <h1>{title}</h1>
+        {eyebrow && (
+          <span className="eyebrow">{eyebrow}</span>
+        )}
 
-      <p className="auth-description">
-        {description}
-      </p>
+        <h1>{title}</h1>
 
-      {children}
+        <p className="auth-description">
+          {description}
+        </p>
 
-    </main>
+        {children}
+
+      </main>
+
+    </div>
   );
 }
