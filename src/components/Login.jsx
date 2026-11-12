@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
 
 import AuthCard from "./AuthCard";
 import api from "./Api.jsx";
+import { useAuth } from "../context/AuthContext";
 
 // Yup validation
 const validationSchema = Yup.object({
@@ -24,6 +25,8 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
   const initialValues = {
     email: "",
@@ -36,17 +39,11 @@ export default function Login() {
     try {
       const response = await api.post("/auth/login", values);
 
-      // Store JWT token
-      localStorage.setItem("token", response.data.token);
+      // Update shared authentication state and persist the session.
+      login(response.data);
 
-      // Store logged-in user details
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.data.user)
-      );
-
-      // Navigate to Home
-      navigate("/");
+      // Return users to the protected page they originally requested.
+      navigate(location.state?.from?.pathname || "/dashboard", { replace: true });
 
     } catch (err) {
       setError(
