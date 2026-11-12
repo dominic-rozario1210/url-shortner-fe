@@ -10,10 +10,10 @@ export default function Navbar() {
   const closeMenu = () => setMenuOpen(false);
 
   function handleLogout() {
-    logout();
-    closeMenu();
-    navigate("/",{ replace: true });
-  }
+  closeMenu();
+  navigate("/", { replace: true });
+  logout();
+}
 
   const displayName = user?.firstName || user?.name || "Account";
 
